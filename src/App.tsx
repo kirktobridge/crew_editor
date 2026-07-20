@@ -26,6 +26,7 @@ import {
   DEFAULT_AGENT_DATA, DEFAULT_TASK_DATA, DEFAULT_CREW_SETTINGS, migrateNodeData,
 } from './types';
 import { generateAgentsYaml, generateTasksYaml, generatePythonCode } from './utils/export';
+import { saveGraphToFile, openGraphFromFile } from './utils/graphFile';
 import useUndoRedo from './hooks/useUndoRedo';
 
 import AgentNode from './components/nodes/AgentNode';
@@ -457,6 +458,49 @@ function Flow() {
     clearHistory();
   }, [savedGraphs, clearHistory]);
 
+  // File-backed graph round-trip: save the full editable canvas to a
+  // .crew.json (keeps layout + wiring, version-controllable in the repo) and
+  // reopen it later. Distinct from localStorage saves and one-way YAML/Python.
+  const handleSaveGraphFile = useCallback(async () => {
+    try {
+      await saveGraphToFile(activeGraphTitle, crewSettings, nodes, edges);
+    } catch (err) {
+      console.error('Failed to save graph file', err);
+      window.alert(`Could not save graph file: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [activeGraphTitle, crewSettings, nodes, edges]);
+
+  const handleOpenGraphFile = useCallback(async () => {
+    const loadFile = async () => {
+      try {
+        const graph = await openGraphFromFile();
+        if (!graph) return;
+        const migratedNodes = graph.nodes.map(migrateNodeData);
+        setNodes(migratedNodes);
+        setEdges(graph.edges);
+        setActiveGraphTitle(graph.graphName || 'Untitled');
+        setCrewSettings(graph.crewSettings || { ...DEFAULT_CREW_SETTINGS });
+        setSelectedNodeId(null);
+        clearHistory();
+      } catch (err) {
+        console.error('Failed to open graph file', err);
+        window.alert(`Could not open graph file: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    };
+
+    if (nodes.length > 0 || edges.length > 0) {
+      setConfirmModal({
+        open: true,
+        title: 'Open Graph File',
+        message: 'This will replace the current canvas. Any unsaved changes will be lost.',
+        variant: 'warning',
+        onConfirm: () => { setConfirmModal(prev => ({ ...prev, open: false })); loadFile(); },
+      });
+    } else {
+      loadFile();
+    }
+  }, [nodes, edges, clearHistory]);
+
   const handleDeleteGraph = useCallback((name: string) => {
     const updated = savedGraphs.filter(g => g.name !== name);
     setSavedGraphs(updated);
@@ -534,6 +578,8 @@ function Flow() {
         onLoad={() => setLoadModalOpen(true)}
         onExportYaml={() => { setExportMode('yaml'); setExportModalOpen(true); }}
         onExportPython={() => { setExportMode('python'); setExportModalOpen(true); }}
+        onSaveGraphFile={handleSaveGraphFile}
+        onOpenGraphFile={handleOpenGraphFile}
         onCrewSettings={() => setCrewSettingsOpen(true)}
         onUndo={handleUndo}
         onRedo={handleRedo}

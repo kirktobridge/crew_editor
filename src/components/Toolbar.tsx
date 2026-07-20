@@ -8,6 +8,8 @@ import RedoIcon from '@mui/icons-material/Redo';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import FileOpenIcon from '@mui/icons-material/FileOpen';
 import SettingsIcon from '@mui/icons-material/Settings';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import CodeIcon from '@mui/icons-material/Code';
@@ -25,6 +27,8 @@ interface ToolbarProps {
   onLoad: () => void;
   onExportYaml: () => void;
   onExportPython: () => void;
+  onSaveGraphFile: () => void;
+  onOpenGraphFile: () => void;
   onCrewSettings: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -44,6 +48,8 @@ export default function Toolbar({
   onLoad,
   onExportYaml,
   onExportPython,
+  onSaveGraphFile,
+  onOpenGraphFile,
   onCrewSettings,
   onUndo,
   onRedo,
@@ -300,6 +306,30 @@ export default function Toolbar({
           sx={{ color: COLORS.text.secondary }}
         >
           <FolderOpenIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </Tooltip>
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+      {/* Graph file round-trip (save/reopen the full canvas as a .crew.json) */}
+      <Tooltip title="Save graph to file (.crew.json)">
+        <IconButton
+          size="small"
+          onClick={onSaveGraphFile}
+          aria-label="Save graph to file"
+          sx={{ color: COLORS.text.secondary }}
+        >
+          <SaveAltIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Open graph from file (.crew.json)">
+        <IconButton
+          size="small"
+          onClick={onOpenGraphFile}
+          aria-label="Open graph from file"
+          sx={{ color: COLORS.text.secondary }}
+        >
+          <FileOpenIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </Tooltip>
     </Box>
